@@ -2,8 +2,9 @@ import math
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.animation import FuncAnimation
-import pickle
+import pygame
+from pygame.locals import QUIT, MOUSEBUTTONUP
+
 
 #Turtlebot parameters
 radius = 0.177
@@ -36,36 +37,36 @@ def obstacle(x,y):
     obs = 0
     #center circle
     if ((x)**2 + (y)**2) <= (1+radius + clearance)**2:
-        print("c1")
+#        print("c1")
         obs = 1
     #topright circle
     elif((x-2.00)**2 + (y-3.00)**2) <= (1+radius + clearance)**2:
-        print("c2")
+#        print("c2")
         obs = 1
     #bottomright circle
     elif((x-2.00)**2 + (y+3.00)**2) <= (1+radius + clearance)**2:
-        print("c3")
+#        print("c3")
         obs = 1
     #bottomleft circle
     elif((x+2.00)**2 + (y+3.00)**2) <= (1+radius + clearance)**2:
-        print("c4")
+#        print("c4")
         obs = 1
     #right square
     elif(y-0.25-radius - clearance)<=0 and (y+0.25+radius + clearance)>=0 and (x-3.25+radius + clearance)>=0 and (x-4.75-radius - clearance)<=0:
-        print("s1")
+#        print("s1")
         obs = 1
     #topleft square
     elif(y-3.75-radius - clearance)<=0 and (y-3.25+radius + clearance)>=0 and (x+1.25-radius - clearance)<=0 and (x+2.75+radius + clearance)>=0:
-        print("s2")
+#        print("s2")
         obs = 1
     #left square
     elif(y-0.25-radius - clearance)<=0 and (y+0.25+radius + clearance)>=0 and (x+3.25-radius - clearance)<=0 and (x+4.75+radius + clearance)>=0:
-       print("s3")
+#       print("s3")
        obs = 1
 #    elif x>=(5-radius - clearance) or x<=(-5+radius + clearance) or y>=(5-radius - clearance) or y<=(-5+radius + clearance):
 #        obs = 1
     elif x>=5 or y>=5 or x<=(-5) or y<=(-5):
-        print("o")
+#        print("o")
         obs = 1
     return obs  
 
@@ -157,9 +158,9 @@ def robot_move(left_vel, right_vel, initial,theta):
     x_robot = initial[0]
     y_robot = initial[1]
     for i in range(0,100):
-        x_robot = x_robot + (radius/2)*(left_vel + right_vel)*math.cos(theta)*dtime*(1/100)
-        y_robot = y_robot + (radius/2)*(left_vel + right_vel)*math.sin(theta)*dtime*(1/100)
-        theta = theta + (radius/L)*(right_vel-left_vel)*dtime*(1/100)
+        x_robot = x_robot + (r_wheel/2)*(left_vel + right_vel)*math.cos(theta)*dtime*(1/100)
+        y_robot = y_robot + (r_wheel/2)*(left_vel + right_vel)*math.sin(theta)*dtime*(1/100)
+        theta = theta + (r_wheel/L)*(right_vel-left_vel)*dtime*(1/100)
         obs = obstacle(x_robot,y_robot)
         if obs == 1:
             break            
@@ -210,11 +211,12 @@ def child(vel1, vel2, initial,theta_list):
         
 def inside_goal_range(current):
     goal_flag=0
-    if ((current[0]-goal_pos[0])**2+(current[1]-goal_pos[1])**2<(0.05)**2) or current == goal_pos:
+    if ((current[0]-goal_pos[0])**2+(current[1]-goal_pos[1])**2<(0.1)**2) or current == goal_pos:
         goal_flag=1
     return goal_flag
 
-while goal_flag!=1:    
+while goal_flag!=1:
+    goal_flag = inside_goal_range(allnodes[least_val])   
     if allnodes==[]:
         print("Path not found for the given clearance")
         exit()
@@ -233,21 +235,21 @@ while goal_flag!=1:
         min_cost = min(heuristic_cost)
         least_val  = heuristic_cost.index(min_cost)
         cumulative_cost = cost_list[least_val]
-    goal_flag = inside_goal_range(allnodes[least_val])
+    
 
 
 final_pos = visited[-1]
-solution.append(final_pos)
+solution.append((round(final_pos[0],2), round(final_pos[1],2)))
 vel_to_goal.append(velocity_new[-1])
-theta_final_list = []
-theta_final_list.append(theta_list[-1])
+#theta_final_list = []
+#theta_final_list.append(theta_list[-1])
 
 while True:
         check = visited.index(final_pos)
         final_pos = parent_visited[check] 
-        theta_temp = theta_list[check]
-        solution.append(final_pos)
-        theta_final_list.append(theta_temp)
+#        theta_temp = theta_list[check]
+        solution.append((round(final_pos[0], 2), round(final_pos[1], 2)))
+#        theta_final_list.append(theta_temp)
         vel_to_goal.append(velocity_new[check])
         if final_pos == start:
             print("Path Found")
@@ -261,26 +263,94 @@ def display_path(visited, path):
     x = np.linspace(-5,5,100)
     y = np.linspace(-5,5,100)
     print("visited: "+str(len(visited)))
-    print("path: "+str(len(path)))
-    
-    plt.scatter(goal_x, goal_y,s = 1, color = 'y')
-    plt.scatter(start_x, start_y,s = 1, color = 'm')
-    plt.scatter    
+    print("path: "+str(len(path)))       
  
     for i in visited:
         plt.scatter(i[0], i[1],s = 1, color = 'g')
-#    plt.axis('equal')  
-#    plt.show()
     
     for i in path:
-        plt.scatter(i[0], i[1], s = 1, color = 'b')    
+        plt.scatter(i[0], i[1], s = 1, color = 'b') 
     
     for i in x:
         for j in y:
             if obstacle(i,j) == True:
                 plt.scatter(i, j, color = 'r')
-    
+
+    plt.scatter(goal_x, goal_y, s = 5, color = 'y')
+    plt.scatter(start_x, start_y, s = 5, color = 'm')
     plt.axis('equal')  
     plt.show()
     
 display_path(visited,solution)
+
+def generate_obstacle_map():
+    obstacle_list = []
+    for x in range(-5,5):
+        for y in range(-5,5):
+            if obstacle(x,y):
+                obstacle_list.append([x,y])
+    return obstacle_list
+
+obstacle_map = generate_obstacle_map()
+
+"""
+OBS_C = [219, 114, 15]
+EXP_C = [36, 237, 130]
+PATH_C = [230, 90, 104]
+WHITE = [255, 255, 255]
+START_C = [255, 0, 0]
+GOAL_C = [0,0,255]
+#preparing data for pygame
+scale_factor = 100
+obstacle_map = np.array(obstacle_map)
+visited_nodes = np.array(visited)
+solution = np.array(solution)
+pygame.init()
+size = (10*scale_factor, 10*scale_factor)
+win = pygame.display.set_mode((10*scale_factor, 10*scale_factor))
+win.fill(WHITE)
+pygame.display.set_caption("A* algorithm turtlebot")
+while True:
+    win.fill(WHITE)
+    pygame.event.get()
+    for event in pygame.event.get():
+        if event.type == MOUSEBUTTONUP:
+            None
+#    for obs in obstacle_map:
+#        pygame.draw.rect(win, OBS_C, [(obs[0]+5)*scale_factor, (obs[1]+5)*scale_factor,10,10])
+##        pygame.display.flip()
+#        for event in pygame.event.get():
+#            if event.type == MOUSEBUTTONUP:
+#                None
+        
+    pygame.draw.rect(win, START_C, [(start_x+5)*scale_factor, (start_y+5)*scale_factor,3,3])
+    pygame.draw.rect(win, GOAL_C, [(goal_x+5)*scale_factor, (goal_y+5)*scale_factor,3,3])
+    pygame.draw.rect(win, OBS_C, [0.25*scale_factor, 5.25*scale_factor, 1.5*scale_factor, 0.5*scale_factor])
+    pygame.draw.circle(win, OBS_C, [5*scale_factor, 5*scale_factor], 1*scale_factor)
+    pygame.draw.circle(win, OBS_C, [7*scale_factor, 8*scale_factor], 1*scale_factor) #bottom right
+    pygame.draw.circle(win, OBS_C, [7*scale_factor, 2*scale_factor], 1*scale_factor) #topright
+    pygame.draw.circle(win, OBS_C, [3*scale_factor, 2*scale_factor], 1*scale_factor) #topleft
+    pygame.display.flip()
+
+    for vis in visited_nodes:
+        pygame.draw.rect(win, EXP_C, [(vis[0]-5)*scale_factor, (vis[1]-5)*scale_factor,3,3])
+        pygame.time.wait(1)
+#        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == MOUSEBUTTONUP:
+                None
+        
+    for sol in solution:
+        pygame.draw.rect(win, PATH_C, [(sol[0]+5)*scale_factor, (sol[1]+5)*scale_factor,3,3])
+        pygame.time.wait(1)
+        pygame.display.flip()
+        for event in pygame.event.get():
+            if event.type == MOUSEBUTTONUP:
+                None        
+    animation_flag = 1
+    while animation_flag == 1:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+"""
